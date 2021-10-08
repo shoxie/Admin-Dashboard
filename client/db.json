@@ -1,0 +1,81 @@
+{
+  "categories": [
+    {
+      "name": {
+        "0": "L",
+        "1": "u",
+        "2": "ậ",
+        "3": "t",
+        "4": " ",
+        "5": "c",
+        "6": "h",
+        "7": "u",
+        "8": "n",
+        "9": "g",
+        "vi": "Luat chung ",
+        "en": "Luat chung eng"
+      },
+      "createdAt": 1633621636317,
+      "updatedAt": 1633629188013,
+      "id": 1,
+      "description": {
+        "en": "afsfs",
+        "vi": "afsasf"
+      }
+    },
+    {
+      "name": {
+        "0": "H",
+        "1": "i",
+        "2": "ế",
+        "3": "n",
+        "4": " ",
+        "5": "P",
+        "6": "h",
+        "7": "á",
+        "8": "p",
+        "en": "Hien phap",
+        "vi": "Hien phap vi"
+      },
+      "createdAt": 1633621642956,
+      "updatedAt": 1633629180887,
+      "id": 2,
+      "categoryId": 1
+    },
+    {
+      "name": {
+        "en": "sad",
+        "vi": "asd"
+      },
+      "description": {
+        "en": "sa"
+      },
+      "createdAt": 1633627494805,
+      "updatedAt": 1633630591019,
+      "id": 3,
+      "categoryId": 1
+    },
+    {
+      "name": {
+        "en": "asdq asd",
+        "vi": "21dd121d2"
+      },
+      "description": {
+        "en": "asdasdasd",
+        "vi": "21d"
+      },
+      "name2": {
+        "en": "f131",
+        "vi": "12dd12"
+      },
+      "description2": {
+        "en": "12d212d1d2",
+        "vi": "1d21d2d21"
+      },
+      "createdAt": 1633629018724,
+      "updatedAt": 1633630690380,
+      "id": 4,
+      "categoryId": 1
+    }
+  ]
+}
