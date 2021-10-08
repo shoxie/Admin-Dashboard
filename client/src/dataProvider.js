@@ -1,7 +1,7 @@
 import { fetchUtils } from "react-admin";
 import { stringify } from "query-string";
 
-const apiUrl = "https://my.api.com/";
+const apiUrl = "/api";
 const httpClient = fetchUtils.fetchJson;
 
 const dp = {
@@ -9,15 +9,16 @@ const dp = {
     const { page, perPage } = params.pagination;
     const { field, order } = params.sort;
     const query = {
-      sort: JSON.stringify([field, order]),
-      range: JSON.stringify([(page - 1) * perPage, page * perPage - 1]),
+      _order: field,
+      _sort: order,
+      _skip: (page - 1) * perPage,
+      _take: perPage,
       filter: JSON.stringify(params.filter),
     };
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
-
-    return httpClient(url).then(({ headers, json }) => ({
-      data: json,
-      total: parseInt(headers.get("content-range").split("/").pop(), 10),
+    return httpClient(url).then(({ json }) => ({
+      data: json.data,
+      total: json.total,
     }));
   },
 
@@ -28,10 +29,10 @@ const dp = {
 
   getMany: (resource, params) => {
     const query = {
-      filter: JSON.stringify({ ids: params.ids }),
+      ids: JSON.stringify(params.ids),
     };
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
-    return httpClient(url).then(({ json }) => ({ data: json }));
+    return httpClient(url).then(({ json }) => ({ data: json.data }));
   },
 
   getManyReference: (resource, params) => {
@@ -48,8 +49,8 @@ const dp = {
     const url = `${apiUrl}/${resource}?${stringify(query)}`;
 
     return httpClient(url).then(({ headers, json }) => ({
-      data: json,
-      total: parseInt(headers.get("content-range").split("/").pop(), 10),
+      data: json.data,
+      total: json.total,
     }));
   },
 
@@ -59,15 +60,15 @@ const dp = {
       body: JSON.stringify(params.data),
     }).then(({ json }) => ({ data: json })),
 
-  updateMany: (resource, params) => {
-    const query = {
-      filter: JSON.stringify({ id: params.ids }),
-    };
-    return httpClient(`${apiUrl}/${resource}?${stringify(query)}`, {
-      method: "PUT",
-      body: JSON.stringify(params.data),
-    }).then(({ json }) => ({ data: json }));
-  },
+  updateMany: (resource, params) =>
+    Promise.all(
+      params.ids.map((id) =>
+        httpClient(`${apiUrl}/${resource}/${id}`, {
+          method: "PUT",
+          body: JSON.stringify(params.data),
+        })
+      )
+    ).then((responses) => ({ data: responses.map(({ json }) => json.id) })),
 
   create: (resource, params) =>
     httpClient(`${apiUrl}/${resource}`, {
@@ -82,14 +83,13 @@ const dp = {
       method: "DELETE",
     }).then(({ json }) => ({ data: json })),
 
-  deleteMany: (resource, params) => {
-    const query = {
-      filter: JSON.stringify({ id: params.ids }),
-    };
-    return httpClient(`${apiUrl}/${resource}?${stringify(query)}`, {
-      method: "DELETE",
-      body: JSON.stringify(params.data),
-    }).then(({ json }) => ({ data: json }));
-  },
+  deleteMany: (resource, params) =>
+    Promise.all(
+      params.ids.map((id) =>
+        httpClient(`${apiUrl}/${resource}/${id}`, {
+          method: "DELETE",
+        })
+      )
+    ).then((responses) => ({ data: responses.map(({ json }) => json.id) })),
 };
 export default dp;

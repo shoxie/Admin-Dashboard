@@ -12,13 +12,13 @@ router.get("/", async function (req, res, next) {
     const sort = req?.query?._sort?.toLowerCase() || undefined;
     const ids = req.query?.ids && JSON.parse(req.query.ids);
     const filter = req.query?.filter && JSON.parse(req.query.filter);
-    const data = await prisma.admins.findMany({
+    const data = await prisma.post_categories.findMany({
       skip,
       take,
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
     });
-    const total = await prisma.admins.count({
+    const total = await prisma.post_categories.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
     res.send({ data, total });
@@ -28,7 +28,7 @@ router.get("/", async function (req, res, next) {
 });
 router.post("/", async function (req, res, next) {
   try {
-    const data = await prisma.admins.create({ data: req.body });
+    const data = await prisma.post_categories.create({ data: req.body });
     res.send(data);
   } catch (e) {
     next(new Error(e));
@@ -37,7 +37,7 @@ router.post("/", async function (req, res, next) {
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.admins.findUnique({
+    const results = await prisma.post_categories.findUnique({
       where: { id: parseInt(req.params.id) },
     });
     res.send(results);
@@ -47,7 +47,7 @@ router.get("/:id", async function (req, res, next) {
 });
 router.delete("/:id", async function (req, res, next) {
   try {
-    const data = await prisma.admins.delete({
+    const data = await prisma.post_categories.delete({
       where: { id: parseInt(req.params.id) },
     });
     res.send(data);
@@ -58,7 +58,7 @@ router.delete("/:id", async function (req, res, next) {
 
 router.put("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.admins.update({
+    const results = await prisma.post_categories.update({
       where: { id: parseInt(req.params.id) },
       data: req.body,
     });

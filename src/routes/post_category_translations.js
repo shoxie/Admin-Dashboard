@@ -12,13 +12,15 @@ router.get("/", async function (req, res, next) {
     const sort = req?.query?._sort?.toLowerCase() || undefined;
     const ids = req.query?.ids && JSON.parse(req.query.ids);
     const filter = req.query?.filter && JSON.parse(req.query.filter);
-    const data = await prisma.admins.findMany({
+
+    let data = await prisma.post_category_translations.findMany({
       skip,
       take,
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
     });
-    const total = await prisma.admins.count({
+    data = data.map((e) => ({ ...e, id: e.post_category_id + "_" + e.locale }));
+    const total = await prisma.post_category_translations.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
     res.send({ data, total });
@@ -28,7 +30,9 @@ router.get("/", async function (req, res, next) {
 });
 router.post("/", async function (req, res, next) {
   try {
-    const data = await prisma.admins.create({ data: req.body });
+    const data = await prisma.post_category_translations.create({
+      data: req.body,
+    });
     res.send(data);
   } catch (e) {
     next(new Error(e));
@@ -37,7 +41,7 @@ router.post("/", async function (req, res, next) {
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.admins.findUnique({
+    const results = await prisma.post_category_translations.findUnique({
       where: { id: parseInt(req.params.id) },
     });
     res.send(results);
@@ -47,7 +51,7 @@ router.get("/:id", async function (req, res, next) {
 });
 router.delete("/:id", async function (req, res, next) {
   try {
-    const data = await prisma.admins.delete({
+    const data = await prisma.post_category_translations.delete({
       where: { id: parseInt(req.params.id) },
     });
     res.send(data);
@@ -58,7 +62,7 @@ router.delete("/:id", async function (req, res, next) {
 
 router.put("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.admins.update({
+    const results = await prisma.post_category_translations.update({
       where: { id: parseInt(req.params.id) },
       data: req.body,
     });

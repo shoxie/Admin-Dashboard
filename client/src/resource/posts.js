@@ -13,6 +13,13 @@ import {
   FunctionField,
   SimpleShowLayout,
   DateField,
+  ReferenceField,
+  BooleanField,
+  NumberField,
+  NumberInput,
+  ReferenceInput,
+  BooleanInput,
+  SelectInput,
 } from "react-admin";
 
 // const ResourceFilters = [<TextInput source="q" label="Search" alwaysOn />];
@@ -22,8 +29,11 @@ function ResourceList(props) {
     <List filters={ResourceFilters} {...props}>
       <Datagrid>
         <TextField source="id" />
-        <TextField source="username" />
-        <TextField source="email" />
+        <ReferenceField label="Author" reference="admins" source="author_id">
+          <TextField source="username" />
+        </ReferenceField>
+        <BooleanField source="is_published" />
+        <DateField source="updated_at" />
         <DateField source="created_at" />
         <FunctionField
           label="Action"
@@ -44,10 +54,11 @@ function ResourceEdit(props) {
     <Edit {...props}>
       <SimpleForm>
         <TextInput disabled source="id" />
-        <TextInput source="username" />
-        <TextInput source="fullname" />
-        <TextInput source="phone_number" />
-        <TextInput source="email" />
+        <NumberInput source="order" />
+        <ReferenceInput reference="admins" source="author_id">
+          <SelectInput optionText="username" />
+        </ReferenceInput>
+        <BooleanInput source="is_published" />
       </SimpleForm>
     </Edit>
   );
@@ -56,11 +67,11 @@ function ResourceCreate(props) {
   return (
     <Create {...props}>
       <SimpleForm>
-        <TextInput source="username" />
-        <TextInput source="fullname" />
-        <TextInput source="password" type="password" />
-        <TextInput source="phone_number" />
-        <TextInput source="email" />
+        <NumberInput source="order" />
+        <ReferenceInput reference="admins" source="author_id">
+          <SelectInput optionText="username" />
+        </ReferenceInput>
+        <BooleanInput source="is_published" />
       </SimpleForm>
     </Create>
   );
@@ -71,10 +82,11 @@ function ResourceShow(props) {
     <Show {...props}>
       <SimpleShowLayout>
         <TextField source="id" />
-        <TextField source="username" />
-        <TextField source="fullname" />
-        <TextField source="phone_number" />
-        <TextField source="email" />
+        <NumberField source="order" />
+        <ReferenceField reference="admins" source="author_id">
+          <TextField source="username" />
+        </ReferenceField>
+        <BooleanField source="is_published" />
         <DateField source="updated_at" />
         <DateField source="created_at" />
       </SimpleShowLayout>
