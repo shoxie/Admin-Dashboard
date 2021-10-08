@@ -3,25 +3,595 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+model admins {
+  id           BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  username     String       @unique(map: "admins_username_unique") @db.VarChar(255)
+  password     String       @db.VarChar(255)
+  fullname     String?      @db.VarChar(255)
+  email        String?      @db.VarChar(255)
+  phone_number String?      @db.VarChar(255)
+  created_at   DateTime     @default(now()) @db.Timestamp(0)
+  updated_at   DateTime     @default(now()) @db.Timestamp(0)
+  deleted_at   DateTime?    @db.Timestamp(0)
+  books        books[]
+  chat_rooms   chat_rooms[]
+  posts        posts[]
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  viewCount Int      @default(0)
-  author    User?    @relation(fields: [authorId], references: [id])
-  authorId  Int?
+model attachments {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  path        String    @db.Text
+  mime_type   String    @db.VarChar(255)
+  size        String    @db.VarChar(255)
+  document_id String?   @db.VarChar(255)
+  created_at  DateTime  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime  @default(now()) @db.Timestamp(0)
+  deleted_at  DateTime? @db.Timestamp(0)
+}
+
+model book_categories {
+  id                    BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  title                 String                  @db.VarChar(255)
+  slug                  String                  @db.VarChar(255)
+  parent_id             BigInt?                 @db.UnsignedBigInt
+  description           String?                 @db.MediumText
+  is_published          Boolean                 @default(false)
+  order                 BigInt?                 @db.UnsignedBigInt
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @default(now()) @db.Timestamp(0)
+  deleted_at            DateTime?               @db.Timestamp(0)
+  book_categories       book_categories?        @relation("book_categoriesTobook_categories_parent_id", fields: [parent_id], references: [id], onUpdate: NoAction, map: "book_categories_parent_id_foreign")
+  other_book_categories book_categories[]       @relation("book_categoriesTobook_categories_parent_id")
+  book_category_service book_category_service[]
+  books                 books[]
+
+  @@index([parent_id], map: "book_categories_parent_id_foreign")
+}
+
+model book_category_service {
+  book_category_id BigInt          @db.UnsignedBigInt
+  service_id       BigInt          @db.UnsignedBigInt
+  book_categories  book_categories @relation(fields: [book_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "book_category_service_book_category_id_foreign")
+  services         services        @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "book_category_service_service_id_foreign")
+
+  @@id([book_category_id, service_id])
+  @@index([service_id], map: "book_category_service_service_id_foreign")
+}
+
+model book_orders {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  fullname     String    @db.VarChar(255)
+  phone_number String    @db.VarChar(255)
+  address      String    @db.VarChar(255)
+  qty          Int       @default(1) @db.UnsignedSmallInt
+  note         String?   @db.Text
+  total        String    @db.VarChar(255)
+  created_at   DateTime  @default(now()) @db.Timestamp(0)
+  updated_at   DateTime  @default(now()) @db.Timestamp(0)
+  deleted_at   DateTime? @db.Timestamp(0)
+}
+
+model book_service {
+  book_id    BigInt   @db.UnsignedBigInt
+  service_id BigInt   @db.UnsignedBigInt
+  books      books    @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "book_service_book_id_foreign")
+  services   services @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "book_service_service_id_foreign")
+
+  @@id([book_id, service_id])
+  @@index([service_id], map: "book_service_service_id_foreign")
+}
+
+model books {
+  id               BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  title            String           @db.VarChar(255)
+  slug             String           @db.VarChar(255)
+  book_category_id BigInt?          @db.UnsignedBigInt
+  description      String?          @db.MediumText
+  is_published     Boolean          @default(false)
+  poster_id        BigInt?          @db.UnsignedBigInt
+  author           String?          @db.VarChar(255)
+  pages            Int?             @db.UnsignedInt
+  cover_url        String?          @db.VarChar(255)
+  order            BigInt?          @db.UnsignedBigInt
+  created_at       DateTime         @default(now()) @db.Timestamp(0)
+  updated_at       DateTime         @default(now()) @db.Timestamp(0)
+  deleted_at       DateTime?        @db.Timestamp(0)
+  book_categories  book_categories? @relation(fields: [book_category_id], references: [id], onUpdate: NoAction, map: "books_book_category_id_foreign")
+  admins           admins?          @relation(fields: [poster_id], references: [id], onUpdate: NoAction, map: "books_poster_id_foreign")
+  book_service     book_service[]
+
+  @@index([book_category_id], map: "books_book_category_id_foreign")
+  @@index([poster_id], map: "books_poster_id_foreign")
+}
+
+model chat_messages {
+  id         BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  message    String     @db.LongText
+  room_id    BigInt     @db.UnsignedBigInt
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  updated_at DateTime   @default(now()) @db.Timestamp(0)
+  deleted_at DateTime?  @db.Timestamp(0)
+  chat_rooms chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "chat_messages_room_id_foreign")
+
+  @@index([room_id], map: "chat_messages_room_id_foreign")
+}
+
+model chat_rooms {
+  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id       BigInt          @db.UnsignedBigInt
+  admin_id      BigInt          @db.UnsignedBigInt
+  is_closed     Boolean         @default(false)
+  created_at    DateTime        @default(now()) @db.Timestamp(0)
+  updated_at    DateTime        @default(now()) @db.Timestamp(0)
+  deleted_at    DateTime?       @db.Timestamp(0)
+  admins        admins          @relation(fields: [admin_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "chat_rooms_admin_id_foreign")
+  users         users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "chat_rooms_user_id_foreign")
+  chat_messages chat_messages[]
+
+  @@index([admin_id], map: "chat_rooms_admin_id_foreign")
+  @@index([user_id], map: "chat_rooms_user_id_foreign")
+}
+
+model contacts {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  fullname     String    @db.VarChar(255)
+  phone_number String    @db.VarChar(255)
+  content      String    @db.LongText
+  is_responded Boolean   @default(false)
+  created_at   DateTime  @default(now()) @db.Timestamp(0)
+  updated_at   DateTime  @default(now()) @db.Timestamp(0)
+  deleted_at   DateTime? @db.Timestamp(0)
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model invoices {
+  id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id         BigInt        @db.UnsignedBigInt
+  subscription_id BigInt        @db.UnsignedBigInt
+  created_at      DateTime      @default(now()) @db.Timestamp(0)
+  updated_at      DateTime      @default(now()) @db.Timestamp(0)
+  deleted_at      DateTime?     @db.Timestamp(0)
+  subscriptions   subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "invoices_subscription_id_foreign")
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "invoices_user_id_foreign")
+
+  @@index([subscription_id], map: "invoices_subscription_id_foreign")
+  @@index([user_id], map: "invoices_user_id_foreign")
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  queue        String @db.VarChar(255)
+  payload      String @db.LongText
+  attempts     Int    @db.UnsignedTinyInt
+  reserved_at  Int?   @db.UnsignedInt
+  available_at Int    @db.UnsignedInt
+  created_at   Int    @db.UnsignedInt
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model law_agencies {
+  id                      Int                       @id @default(autoincrement()) @db.UnsignedSmallInt
+  law_agency_translations law_agency_translations[]
+  laws                    laws[]
+}
+
+model law_agency_translations {
+  law_agency_id Int          @db.UnsignedSmallInt
+  locale        String       @db.VarChar(255)
+  name          String       @db.VarChar(255)
+  law_agencies  law_agencies @relation(fields: [law_agency_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_agency_translations_law_agency_id_foreign")
+
+  @@unique([law_agency_id, locale], map: "law_agency_translations_law_agency_id_locale_primary")
+}
+
+model law_categories {
+  id                                        BigInt                      @id @default(autoincrement()) @db.UnsignedBigInt
+  is_published                              Boolean                     @default(false)
+  has_distribute_law_type                   Boolean                     @default(false)
+  depth                                     Int?                        @db.TinyInt
+  order                                     BigInt?                     @db.UnsignedBigInt
+  parent_id                                 BigInt?                     @db.UnsignedBigInt
+  created_at                                DateTime                    @default(now()) @db.Timestamp(0)
+  updated_at                                DateTime                    @default(now()) @db.Timestamp(0)
+  deleted_at                                DateTime?                   @db.Timestamp(0)
+  pinned_law_id                             BigInt?                     @db.UnsignedBigInt
+  law_categories                            law_categories?             @relation("law_categoriesTolaw_categories_parent_id", fields: [parent_id], references: [id], onUpdate: NoAction, map: "law_categories_parent_id_foreign")
+  laws_law_categories_pinned_law_idTolaws   laws?                       @relation("law_categories_pinned_law_idTolaws", fields: [pinned_law_id], references: [id], onUpdate: NoAction, map: "law_categories_pinned_law_id_foreign")
+  other_law_categories                      law_categories[]            @relation("law_categoriesTolaw_categories_parent_id")
+  law_category_service                      law_category_service[]
+  law_category_translations                 law_category_translations[]
+  laws_law_categoriesTolaws_law_category_id laws[]                      @relation("law_categoriesTolaws_law_category_id")
+
+  @@index([parent_id], map: "law_categories_parent_id_foreign")
+  @@index([pinned_law_id], map: "law_categories_pinned_law_id_foreign")
+}
+
+model law_category_service {
+  law_category_id BigInt         @db.UnsignedBigInt
+  service_id      BigInt         @db.UnsignedBigInt
+  law_categories  law_categories @relation(fields: [law_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_category_service_law_category_id_foreign")
+  services        services       @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_category_service_service_id_foreign")
+
+  @@id([law_category_id, service_id])
+  @@index([service_id], map: "law_category_service_service_id_foreign")
+}
+
+model law_category_translations {
+  law_category_id BigInt         @db.UnsignedBigInt
+  locale          String         @db.VarChar(255)
+  title           String         @db.VarChar(255)
+  slug            String         @db.VarChar(255)
+  description     String?        @db.MediumText
+  law_categories  law_categories @relation(fields: [law_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_category_translations_law_category_id_foreign")
+
+  @@unique([law_category_id, locale], map: "law_category_translations_law_category_id_locale_primary")
+}
+
+model law_question_and_answers {
+  id                     BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id                BigInt?   @db.UnsignedBigInt
+  question               String    @db.LongText
+  answer                 String?   @db.LongText
+  is_answered            Boolean   @default(false)
+  created_at             DateTime  @default(now()) @db.Timestamp(0)
+  updated_at             DateTime  @default(now()) @db.Timestamp(0)
+  deleted_at             DateTime? @db.Timestamp(0)
+  anonymous_fullname     String?   @db.VarChar(255)
+  anonymous_email        String?   @db.VarChar(255)
+  anonymous_phone_number String?   @db.VarChar(255)
+  users                  users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_question_and_answers_user_id_foreign")
+
+  @@index([user_id], map: "law_question_and_answers_user_id_foreign")
+}
+
+model law_service {
+  law_id     BigInt   @db.UnsignedBigInt
+  service_id BigInt   @db.UnsignedBigInt
+  laws       laws     @relation(fields: [law_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_service_law_id_foreign")
+  services   services @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_service_service_id_foreign")
+
+  @@id([law_id, service_id])
+  @@index([service_id], map: "law_service_service_id_foreign")
+}
+
+model law_situation_categories {
+  id                                  BigInt                                @id @default(autoincrement()) @db.UnsignedBigInt
+  parent_id                           BigInt?                               @db.UnsignedBigInt
+  is_published                        Boolean                               @default(false)
+  order                               BigInt?                               @db.UnsignedBigInt
+  created_at                          DateTime                              @default(now()) @db.Timestamp(0)
+  updated_at                          DateTime                              @default(now()) @db.Timestamp(0)
+  deleted_at                          DateTime?                             @db.Timestamp(0)
+  law_situation_categories            law_situation_categories?             @relation("law_situation_categoriesTolaw_situation_categories_parent_id", fields: [parent_id], references: [id], onUpdate: NoAction, map: "law_situation_categories_parent_id_foreign")
+  other_law_situation_categories      law_situation_categories[]            @relation("law_situation_categoriesTolaw_situation_categories_parent_id")
+  law_situation_category_translations law_situation_category_translations[]
+  law_situations                      law_situations[]
+
+  @@index([parent_id], map: "law_situation_categories_parent_id_foreign")
+}
+
+model law_situation_category_translations {
+  law_situation_category_id BigInt                   @db.UnsignedBigInt
+  locale                    String                   @db.VarChar(255)
+  title                     String                   @db.VarChar(255)
+  slug                      String                   @db.VarChar(255)
+  description               String?                  @db.MediumText
+  law_situation_categories  law_situation_categories @relation(fields: [law_situation_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_situation_cate_trans_law_sitation_cate_id_foreign")
+
+  @@unique([law_situation_category_id, locale], map: "law_situation_cate_trans_law_situation_cate_id_locale_primary")
+}
+
+model law_situation_translations {
+  law_situation_id BigInt         @db.UnsignedBigInt
+  locale           String         @db.VarChar(255)
+  question         String         @db.LongText
+  answer           String         @db.LongText
+  law_situations   law_situations @relation(fields: [law_situation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_situation_translations_law_situation_id_foreign")
+
+  @@unique([law_situation_id, locale], map: "law_situation_translations_law_situation_id_locale_primary")
+}
+
+model law_situations {
+  id                         BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
+  is_published               Boolean                      @default(false)
+  law_situation_category_id  BigInt?                      @db.UnsignedBigInt
+  is_vip                     Boolean                      @default(false)
+  order                      BigInt?                      @db.UnsignedBigInt
+  created_at                 DateTime                     @default(now()) @db.Timestamp(0)
+  updated_at                 DateTime                     @default(now()) @db.Timestamp(0)
+  deleted_at                 DateTime?                    @db.Timestamp(0)
+  law_situation_categories   law_situation_categories?    @relation(fields: [law_situation_category_id], references: [id], onUpdate: NoAction, map: "law_situations_law_situation_category_id_foreign")
+  law_situation_translations law_situation_translations[]
+
+  @@index([law_situation_category_id], map: "law_situations_law_situation_category_id_foreign")
+}
+
+model law_translations {
+  law_id  BigInt  @db.UnsignedBigInt
+  locale  String  @db.VarChar(255)
+  title   String  @db.Text
+  slug    String  @db.Text
+  summary String? @db.MediumText
+  content String  @db.LongText
+  signer  String? @db.VarChar(255)
+  laws    laws    @relation(fields: [law_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_translations_law_id_foreign")
+
+  @@unique([law_id, locale], map: "law_translations_law_id_locale_primary")
+}
+
+model law_type_translations {
+  law_type_id Int       @db.UnsignedTinyInt
+  locale      String    @db.VarChar(255)
+  name        String    @db.VarChar(255)
+  law_types   law_types @relation(fields: [law_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_type_translations_law_type_id_foreign")
+
+  @@unique([law_type_id, locale], map: "law_type_translations_law_type_id_locale_primary")
+}
+
+model law_types {
+  id                    Int                     @id @default(autoincrement()) @db.UnsignedTinyInt
+  law_type_translations law_type_translations[]
+  laws                  laws[]
+}
+
+model law_validities {
+  id                        Int                         @id @default(autoincrement()) @db.UnsignedTinyInt
+  law_validity_translations law_validity_translations[]
+  laws                      laws[]
+}
+
+model law_validity_translations {
+  law_validity_id Int            @db.UnsignedTinyInt
+  locale          String         @db.VarChar(255)
+  name            String         @db.VarChar(255)
+  law_validities  law_validities @relation(fields: [law_validity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "law_validity_translations_law_validity_id_foreign")
+
+  @@unique([law_validity_id, locale], map: "law_validity_translations_law_validity_id_locale_primary")
+}
+
+model laws {
+  id                                                  BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  is_published                                        Boolean            @default(false)
+  date_issued                                         DateTime?          @db.DateTime(0)
+  date_effective                                      DateTime?          @db.DateTime(0)
+  order                                               BigInt?            @db.UnsignedBigInt
+  law_category_id                                     BigInt?            @db.UnsignedBigInt
+  law_type_id                                         Int?               @db.UnsignedTinyInt
+  law_agency_id                                       Int?               @db.UnsignedSmallInt
+  law_validity_id                                     Int?               @db.UnsignedTinyInt
+  created_at                                          DateTime           @default(now()) @db.Timestamp(0)
+  updated_at                                          DateTime           @default(now()) @db.Timestamp(0)
+  deleted_at                                          DateTime?          @db.Timestamp(0)
+  law_agencies                                        law_agencies?      @relation(fields: [law_agency_id], references: [id], onUpdate: NoAction, map: "laws_law_agency_id_foreign")
+  law_categories_law_categoriesTolaws_law_category_id law_categories?    @relation("law_categoriesTolaws_law_category_id", fields: [law_category_id], references: [id], onUpdate: NoAction, map: "laws_law_category_id_foreign")
+  law_types                                           law_types?         @relation(fields: [law_type_id], references: [id], onUpdate: NoAction, map: "laws_law_type_id_foreign")
+  law_validities                                      law_validities?    @relation(fields: [law_validity_id], references: [id], onUpdate: NoAction, map: "laws_law_validity_id_foreign")
+  law_categories_law_categories_pinned_law_idTolaws   law_categories[]   @relation("law_categories_pinned_law_idTolaws")
+  law_service                                         law_service[]
+  law_translations                                    law_translations[]
+
+  @@index([law_agency_id], map: "laws_law_agency_id_foreign")
+  @@index([law_category_id], map: "laws_law_category_id_foreign")
+  @@index([law_type_id], map: "laws_law_type_id_foreign")
+  @@index([law_validity_id], map: "laws_law_validity_id_foreign")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model otps {
+  phone_number String    @unique(map: "otps_phone_number_unique") @db.VarChar(255)
+  code         String    @db.VarChar(6)
+  token        String    @unique(map: "otps_token_unique") @db.VarChar(255)
+  created_at   DateTime  @default(now()) @db.Timestamp(0)
+  expires_in   DateTime? @db.Timestamp(0)
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model post_categories {
+  id                         BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
+  parent_id                  BigInt?                      @db.UnsignedBigInt
+  is_published               Boolean                      @default(false)
+  order                      BigInt?                      @db.UnsignedBigInt
+  created_at                 DateTime                     @default(now()) @db.Timestamp(0)
+  updated_at                 DateTime                     @default(now()) @db.Timestamp(0)
+  deleted_at                 DateTime?                    @db.Timestamp(0)
+  post_categories            post_categories?             @relation("post_categoriesTopost_categories_parent_id", fields: [parent_id], references: [id], onUpdate: NoAction, map: "post_categories_parent_id_foreign")
+  other_post_categories      post_categories[]            @relation("post_categoriesTopost_categories_parent_id")
+  post_category_service      post_category_service[]
+  post_category_translations post_category_translations[]
+  posts                      posts[]
+
+  @@index([parent_id], map: "post_categories_parent_id_foreign")
+}
+
+model post_category_service {
+  post_category_id BigInt          @db.UnsignedBigInt
+  service_id       BigInt          @db.UnsignedBigInt
+  post_categories  post_categories @relation(fields: [post_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_category_service_post_category_id_foreign")
+  services         services        @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_category_service_service_id_foreign")
+
+  @@id([post_category_id, service_id])
+  @@index([service_id], map: "post_category_service_service_id_foreign")
+}
+
+model post_category_translations {
+  post_category_id BigInt          @db.UnsignedBigInt
+  locale           String          @db.VarChar(255)
+  title            String          @db.VarChar(255)
+  slug             String          @db.VarChar(255)
+  description      String?         @db.MediumText
+  post_categories  post_categories @relation(fields: [post_category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_category_translations_post_category_id_foreign")
+
+  @@unique([post_category_id, locale], map: "post_category_translations_post_category_id_locale_primary")
+}
+
+model post_service {
+  post_id    BigInt   @db.UnsignedBigInt
+  service_id BigInt   @db.UnsignedBigInt
+  posts      posts    @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_service_post_id_foreign")
+  services   services @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_service_service_id_foreign")
+
+  @@id([post_id, service_id])
+  @@index([service_id], map: "post_service_service_id_foreign")
+}
+
+model post_translations {
+  post_id     BigInt  @db.UnsignedBigInt
+  locale      String  @db.VarChar(255)
+  title       String  @db.VarChar(255)
+  slug        String  @db.VarChar(255)
+  description String? @db.MediumText
+  content     String? @db.LongText
+  posts       posts   @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_translations_post_id_foreign")
+
+  @@unique([post_id, locale], map: "post_translations_post_id_locale_primary")
+}
+
+model posts {
+  id                BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  post_category_id  BigInt?             @db.UnsignedBigInt
+  is_published      Boolean             @default(false)
+  author_id         BigInt?             @db.UnsignedBigInt
+  thumbnail         String?             @db.VarChar(255)
+  video             String?             @db.VarChar(255)
+  order             BigInt?             @db.UnsignedBigInt
+  created_at        DateTime            @default(now()) @db.Timestamp(0)
+  updated_at        DateTime            @default(now()) @db.Timestamp(0)
+  deleted_at        DateTime?           @db.Timestamp(0)
+  admins            admins?             @relation(fields: [author_id], references: [id], onUpdate: NoAction, map: "posts_author_id_foreign")
+  post_categories   post_categories?    @relation(fields: [post_category_id], references: [id], onUpdate: NoAction, map: "posts_post_category_id_foreign")
+  post_service      post_service[]
+  post_translations post_translations[]
+
+  @@index([author_id], map: "posts_author_id_foreign")
+  @@index([post_category_id], map: "posts_post_category_id_foreign")
+}
+
+model services {
+  id                    BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  name                  String                  @db.VarChar(255)
+  description           String?                 @db.VarChar(255)
+  unit_label            String?                 @db.VarChar(255)
+  price                 String                  @db.VarChar(255)
+  currency              String                  @db.VarChar(255)
+  is_billing_one_time   Boolean                 @default(false)
+  billing_period_days   Int?                    @db.UnsignedInt
+  free_trial_days       Int?                    @db.UnsignedInt
+  is_enabled            Boolean                 @default(true)
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @default(now()) @db.Timestamp(0)
+  deleted_at            DateTime?               @db.Timestamp(0)
+  book_category_service book_category_service[]
+  book_service          book_service[]
+  law_category_service  law_category_service[]
+  law_service           law_service[]
+  post_category_service post_category_service[]
+  post_service          post_service[]
+  subscription_items    subscription_items[]
+}
+
+model subscription_items {
+  id              BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  subscription_id BigInt        @db.UnsignedBigInt
+  service_id      BigInt        @db.UnsignedBigInt
+  quantity        Int           @default(1)
+  created_at      DateTime      @default(now()) @db.Timestamp(0)
+  updated_at      DateTime      @default(now()) @db.Timestamp(0)
+  deleted_at      DateTime?     @db.Timestamp(0)
+  services        services      @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "subscription_items_service_id_foreign")
+  subscriptions   subscriptions @relation(fields: [subscription_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "subscription_items_subscription_id_foreign")
+
+  @@index([service_id], map: "subscription_items_service_id_foreign")
+  @@index([subscription_id], map: "subscription_items_subscription_id_foreign")
+}
+
+model subscriptions {
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id            BigInt               @db.UnsignedBigInt
+  status             String               @db.VarChar(255)
+  price              String               @db.VarChar(255)
+  trial_ends_at      DateTime?            @db.Timestamp(0)
+  ends_at            DateTime?            @db.Timestamp(0)
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  deleted_at         DateTime?            @db.Timestamp(0)
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "subscriptions_user_id_foreign")
+  invoices           invoices[]
+  subscription_items subscription_items[]
+
+  @@index([status], map: "subscriptions_status_index")
+  @@index([user_id], map: "subscriptions_user_id_foreign")
+}
+
+model users {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  fullname                 String?                    @db.VarChar(255)
+  phone_number             String?                    @unique(map: "users_phone_number_unique") @db.VarChar(255)
+  email                    String?                    @db.VarChar(255)
+  email_verified_at        DateTime?                  @db.Timestamp(0)
+  phone_verified_at        DateTime?                  @db.Timestamp(0)
+  avatar_path              String?                    @db.VarChar(255)
+  birthday                 DateTime?                  @db.Date
+  gender                   Boolean?
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                   @default(now()) @db.Timestamp(0)
+  deleted_at               DateTime?                  @db.Timestamp(0)
+  chat_rooms               chat_rooms[]
+  invoices                 invoices[]
+  law_question_and_answers law_question_and_answers[]
+  subscriptions            subscriptions[]
+}
+
+model video_translations {
+  video_id    BigInt  @db.UnsignedBigInt
+  locale      String  @db.VarChar(255)
+  title       String  @db.VarChar(255)
+  slug        String  @db.VarChar(255)
+  description String? @db.MediumText
+  videos      videos  @relation(fields: [video_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "video_translations_video_id_foreign")
+
+  @@unique([video_id, locale], map: "video_translations_video_id_locale_primary")
+}
+
+model videos {
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  is_published       Boolean              @default(false)
+  thumbnail          String?              @db.VarChar(255)
+  video              String?              @db.VarChar(255)
+  order              BigInt?              @db.UnsignedBigInt
+  created_at         DateTime             @default(now()) @db.Timestamp(0)
+  updated_at         DateTime             @default(now()) @db.Timestamp(0)
+  deleted_at         DateTime?            @db.Timestamp(0)
+  video_translations video_translations[]
 }

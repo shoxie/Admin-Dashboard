@@ -62,7 +62,7 @@ function ResourceList(props) {
   );
 }
 
-export const ResourceEdit = (props) => {
+function ResourceEdit(props) {
   const locale = useLocale();
   return (
     <Edit {...props}>
@@ -78,8 +78,8 @@ export const ResourceEdit = (props) => {
       </SimpleForm>
     </Edit>
   );
-};
-export const ResourceCreate = (props) => {
+}
+function ResourceCreate(props) {
   const locale = useLocale();
   return (
     <Create {...props}>
@@ -95,9 +95,9 @@ export const ResourceCreate = (props) => {
       </SimpleForm>
     </Create>
   );
-};
+}
 
-export const ResourceShow = (props) => {
+function ResourceShow(props) {
   const locale = useLocale();
 
   return (
@@ -134,7 +134,7 @@ export const ResourceShow = (props) => {
       </TabbedShowLayout>
     </Show>
   );
-};
+}
 export const list = ResourceList;
 export const edit = ResourceEdit;
 export const create = ResourceCreate;
