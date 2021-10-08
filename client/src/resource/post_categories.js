@@ -20,44 +20,32 @@ import {
   ReferenceInput,
   BooleanInput,
   SelectInput,
-  ReferenceManyField,
-  SingleFieldList,
-  ChipField,
+  useLocale,
+  TranslatableFields,
 } from "react-admin";
 
-// const ResourceFilters = [<TextInput source="q" label="Search" alwaysOn />];
-const ResourceFilters = [];
 function ResourceList(props) {
+  const locale = useLocale();
+  const ResourceFilters = [
+    <ReferenceInput
+      label="Parent Category"
+      reference="post_categories"
+      source="parent_id"
+    >
+      <SelectInput optionText={`title.${locale}`} />
+    </ReferenceInput>,
+    <BooleanInput source="is_published" />,
+  ];
   return (
     <List filters={ResourceFilters} {...props}>
       <Datagrid>
-        <TextField source="id" />
-
-        <ReferenceManyField
-          filter={{ locale: "vi" }}
-          label="Title"
-          reference="post_category_translations"
-          target="post_category_id"
-        >
-          <SingleFieldList>
-            <TextField source="title" />
-          </SingleFieldList>
-        </ReferenceManyField>
+        <TextField sortable={false} source={`title.${locale}`} />
         <ReferenceField
           label="Parent Category"
           reference="post_categories"
           source="parent_id"
         >
-          <ReferenceManyField
-            label="Trans"
-            reference="post_category_translations"
-            target="post_category_id"
-            filter={{ locale: "vi" }}
-          >
-            <SingleFieldList>
-              <TextField source="title" />
-            </SingleFieldList>
-          </ReferenceManyField>
+          <TextField source={`title.${locale}`} />
         </ReferenceField>
         <BooleanField source="is_published" />
         <DateField source="updated_at" />
@@ -105,14 +93,26 @@ function ResourceCreate(props) {
 }
 
 function ResourceShow(props) {
+  const locale = useLocale();
   return (
     <Show {...props}>
       <SimpleShowLayout>
         <TextField source="id" />
-        <NumberField source="order" />
-        <ReferenceField reference="admins" source="author_id">
-          <TextField source="username" />
+        <ReferenceField
+          label="Parent Category"
+          reference="post_categories"
+          source="parent_id"
+        >
+          <TextField source={`title.${locale}`} />
         </ReferenceField>
+
+        <TranslatableFields locales={["vi", "en"]} defaultLocale={locale}>
+          <TextField source="title" />
+          <TextField source="slug" />
+          <TextField source="description" />
+        </TranslatableFields>
+
+        <NumberField source="order" />
         <BooleanField source="is_published" />
         <DateField source="updated_at" />
         <DateField source="created_at" />

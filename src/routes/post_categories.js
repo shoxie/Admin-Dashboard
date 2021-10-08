@@ -4,6 +4,19 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const router = express.Router();
 
+function flatTrans(data) {
+  const fields = ["title", "slug", "description"];
+  if (Array.isArray(data)) return data.map((e) => flatTrans(e));
+  const result = { ...data, post_category_translations: undefined };
+  for (let trans of data.post_category_translations) {
+    for (let field of fields) {
+      if (!result[field]) result[field] = {};
+      result[field][trans.locale] = trans[field];
+    }
+  }
+  return result;
+}
+
 router.get("/", async function (req, res, next) {
   try {
     const skip = parseInt(req.query._skip) || undefined;
@@ -12,12 +25,14 @@ router.get("/", async function (req, res, next) {
     const sort = req?.query?._sort?.toLowerCase() || undefined;
     const ids = req.query?.ids && JSON.parse(req.query.ids);
     const filter = req.query?.filter && JSON.parse(req.query.filter);
-    const data = await prisma.post_categories.findMany({
+    let data = await prisma.post_categories.findMany({
       skip,
       take,
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
+      include: { post_category_translations: true },
     });
+    data = flatTrans(data);
     const total = await prisma.post_categories.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
@@ -37,9 +52,11 @@ router.post("/", async function (req, res, next) {
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.post_categories.findUnique({
+    let results = await prisma.post_categories.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: { post_category_translations: true },
     });
+    results = flatTrans(results);
     res.send(results);
   } catch (e) {
     next(new Error(e));

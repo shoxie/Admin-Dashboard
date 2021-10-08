@@ -10,10 +10,6 @@ app.use(express.json());
 app.use("/api/admins", require("./routes/admins"));
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/post_categories", require("./routes/post_categories"));
-app.use(
-  "/api/post_category_translations",
-  require("./routes/post_category_translations")
-);
 
 app.use((err, res) => {
   res.status(err.status || 500);

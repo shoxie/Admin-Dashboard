@@ -36,7 +36,6 @@ const App = () => (
       create={post_categories.create}
       edit={post_categories.edit}
     />
-    <Resource name="post_category_translations" />
   </Admin>
 );
 
