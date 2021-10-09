@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as admins from "./resource/admins";
-import * as posts from "./resource/posts";
-import * as post_categories from "./resource/post_categories";
+import * as posts from "./resource/posts/index";
+import * as post_categories from "./resource/post_categories/index";
 
 import { Admin, Resource } from "react-admin";
 import { createBrowserHistory as createHistory } from "history";

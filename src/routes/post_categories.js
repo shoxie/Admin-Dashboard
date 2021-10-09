@@ -3,19 +3,8 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 const router = express.Router();
-
-function flatTrans(data) {
-  const fields = ["title", "slug", "description"];
-  if (Array.isArray(data)) return data.map((e) => flatTrans(e));
-  const result = { ...data, post_category_translations: undefined };
-  for (let trans of data.post_category_translations) {
-    for (let field of fields) {
-      if (!result[field]) result[field] = {};
-      result[field][trans.locale] = trans[field];
-    }
-  }
-  return result;
-}
+const translationHelper = require("../lib/translationHelper");
+const TRANS_FIELDS = ["title", "slug", "description"];
 
 router.get("/", async function (req, res, next) {
   try {
@@ -32,7 +21,11 @@ router.get("/", async function (req, res, next) {
       orderBy: order ? { [order]: sort } : undefined,
       include: { post_category_translations: true },
     });
-    data = flatTrans(data);
+    data = translationHelper.flatTrans({
+      data,
+      trans_field: "post_category_translations",
+      trans_fields: TRANS_FIELDS,
+    });
     const total = await prisma.post_categories.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
@@ -43,8 +36,25 @@ router.get("/", async function (req, res, next) {
 });
 router.post("/", async function (req, res, next) {
   try {
-    const data = await prisma.post_categories.create({ data: req.body });
-    res.send(data);
+    const [body, post_categories_translates] = translationHelper.splitTrans({
+      data: req.body,
+      trans_fields: TRANS_FIELDS,
+    });
+    let result = await prisma.post_categories.create({
+      data: {
+        ...body,
+        post_category_translations: {
+          createMany: { data: post_categories_translates },
+        },
+      },
+      include: { post_category_translations: true },
+    });
+    results = translationHelper.flatTrans({
+      data: results,
+      trans_field: "post_category_translations",
+      trans_fields: TRANS_FIELDS,
+    });
+    res.send(result);
   } catch (e) {
     next(new Error(e));
   }
@@ -56,7 +66,11 @@ router.get("/:id", async function (req, res, next) {
       where: { id: parseInt(req.params.id) },
       include: { post_category_translations: true },
     });
-    results = flatTrans(results);
+    results = translationHelper.flatTrans({
+      data: results,
+      trans_field: "post_category_translations",
+      trans_fields: TRANS_FIELDS,
+    });
     res.send(results);
   } catch (e) {
     next(new Error(e));
@@ -75,11 +89,30 @@ router.delete("/:id", async function (req, res, next) {
 
 router.put("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.post_categories.update({
-      where: { id: parseInt(req.params.id) },
+    const id = parseInt(req.params.id);
+    const [body, post_categories_translates] = translationHelper.splitTrans({
       data: req.body,
+      trans_fields: TRANS_FIELDS,
     });
-    res.send(results);
+    const result = await prisma.post_categories.update({
+      where: { id },
+      data: {
+        ...body,
+        post_category_translations: {
+          upsert: post_categories_translates.map((item) => ({
+            create: item,
+            update: item,
+            where: {
+              post_category_id_locale: {
+                locale: item.locale,
+                post_category_id: id,
+              },
+            },
+          })),
+        },
+      },
+    });
+    res.send(result);
   } catch (e) {
     next(new Error(e));
   }

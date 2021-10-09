@@ -1,8 +1,9 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
-
+const translationHelper = require("../lib/translationHelper");
 const prisma = new PrismaClient();
 const router = express.Router();
+const TRANS_FIELDS = ["title", "content", "slug", "description"];
 
 router.get("/", async function (req, res, next) {
   try {
@@ -12,11 +13,17 @@ router.get("/", async function (req, res, next) {
     const sort = req?.query?._sort?.toLowerCase() || undefined;
     const ids = req.query?.ids && JSON.parse(req.query.ids);
     const filter = req.query?.filter && JSON.parse(req.query.filter);
-    const data = await prisma.posts.findMany({
+    let data = await prisma.posts.findMany({
       skip,
       take,
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
+      include: { post_translations: true },
+    });
+    data = translationHelper.flatTrans({
+      data,
+      trans_field: "post_translations",
+      trans_fields: TRANS_FIELDS,
     });
     const total = await prisma.posts.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
@@ -28,8 +35,23 @@ router.get("/", async function (req, res, next) {
 });
 router.post("/", async function (req, res, next) {
   try {
-    const data = await prisma.posts.create({ data: req.body });
-    res.send(data);
+    const [body, post_translates] = translationHelper.splitTrans({
+      data: req.body,
+      trans_fields: TRANS_FIELDS,
+    });
+    let result = await prisma.posts.create({
+      data: {
+        ...body,
+        post_translations: { createMany: { data: post_translates } },
+      },
+      include: { post_translations: true },
+    });
+    result = translationHelper.flatTrans({
+      data: result,
+      trans_field: "post_translations",
+      trans_fields: TRANS_FIELDS,
+    });
+    res.send(result);
   } catch (e) {
     next(new Error(e));
   }
@@ -37,10 +59,16 @@ router.post("/", async function (req, res, next) {
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.posts.findUnique({
+    let result = await prisma.posts.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: { post_translations: true },
     });
-    res.send(results);
+    result = translationHelper.flatTrans({
+      data: result,
+      trans_field: "post_translations",
+      trans_fields: TRANS_FIELDS,
+    });
+    res.send(result);
   } catch (e) {
     next(new Error(e));
   }
@@ -58,11 +86,30 @@ router.delete("/:id", async function (req, res, next) {
 
 router.put("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.posts.update({
-      where: { id: parseInt(req.params.id) },
+    const id = parseInt(req.params.id);
+    const [body, post_translates] = translationHelper.splitTrans({
       data: req.body,
+      trans_fields: TRANS_FIELDS,
     });
-    res.send(results);
+    const result = await prisma.posts.update({
+      where: { id },
+      data: {
+        ...body,
+        post_translations: {
+          upsert: post_translates.map((item) => ({
+            create: item,
+            update: item,
+            where: {
+              post_id_locale: {
+                locale: item.locale,
+                post_id: id,
+              },
+            },
+          })),
+        },
+      },
+    });
+    res.send(result);
   } catch (e) {
     next(new Error(e));
   }
