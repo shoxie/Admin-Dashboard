@@ -1,6 +1,6 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
-
+const bcrypt = require("bcrypt");
 const prisma = new PrismaClient();
 const router = express.Router();
 
@@ -28,7 +28,9 @@ router.get("/", async function (req, res, next) {
 });
 router.post("/", async function (req, res, next) {
   try {
-    const data = await prisma.admins.create({ data: req.body });
+    const body = req.body;
+    body.password = bcrypt.hashSync(body.password, 10);
+    const data = await prisma.admins.create({ data: body });
     res.send(data);
   } catch (e) {
     next(new Error(e));

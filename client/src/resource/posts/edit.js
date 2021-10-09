@@ -12,15 +12,19 @@ import {
   TranslatableInputs,
   required,
 } from "react-admin";
+import RichTextInput from "ra-input-rich-text";
+import { withStyles } from "@material-ui/core/styles";
 
 function Aside() {
   return (
-    <SimpleShowLayout>
-      <TextField source="id" />
+    <div style={{ minWidth: "200px" }}>
+      <SimpleShowLayout>
+        <TextField source="id" />
 
-      <DateField source="updated_at" />
-      <DateField source="created_at" />
-    </SimpleShowLayout>
+        <DateField source="updated_at" />
+        <DateField source="created_at" />
+      </SimpleShowLayout>
+    </div>
   );
 }
 
@@ -67,10 +71,10 @@ function ResourceEdit(props) {
           <TextInput source="title" />
           <TextInput source="slug" />
           <TextInput source="description" />
-          <TextInput multiline source="content" />
+          <RichTextInput source="content" />
         </TranslatableInputs>
       </SimpleForm>
     </Edit>
   );
 }
-export default ResourceEdit;
+export default withStyles({ card: { overflow: "initial" } })(ResourceEdit);

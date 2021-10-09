@@ -6,7 +6,6 @@ import {
   ReferenceField,
   BooleanField,
   NumberField,
-  useLocale,
   TranslatableFields,
 } from "react-admin";
 

@@ -8,7 +8,11 @@ import {
   TranslatableInputs,
   TextInput,
   required,
+  ImageInput,
+  ImageField,
 } from "react-admin";
+import RichTextInput from "ra-input-rich-text";
+import { withStyles } from "@material-ui/core/styles";
 
 function ResourceCreate(props) {
   function localeValidate(values) {
@@ -33,6 +37,9 @@ function ResourceCreate(props) {
     <Create {...props}>
       <SimpleForm redirect="show" validate={localeValidate}>
         <NumberInput source="order" min="0" />
+        <ImageInput source="pictures">
+          <ImageField source="src" title="title" />
+        </ImageInput>
         <ReferenceInput
           reference="post_categories"
           label="Category"
@@ -53,10 +60,10 @@ function ResourceCreate(props) {
           <TextInput source="title" />
           <TextInput source="slug" />
           <TextInput source="description" />
-          <TextInput multiline source="content" />
+          <RichTextInput source="content" />
         </TranslatableInputs>
       </SimpleForm>
     </Create>
   );
 }
-export default ResourceCreate;
+export default withStyles({ card: { overflow: "initial" } })(ResourceCreate);
