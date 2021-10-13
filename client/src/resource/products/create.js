@@ -36,32 +36,23 @@ function ResourceCreate(props) {
   return (
     <Create {...props}>
       <SimpleForm redirect="show" validate={localeValidate}>
-        <NumberInput source="order" min="0" />
-        <ImageInput source="pictures">
-          <ImageField source="src" title="title" />
-        </ImageInput>
-        <ReferenceInput
-          reference="post_categories"
+        {/* <ImageInput source="image">
+          <ImageField source="image" title="name" />
+        </ImageInput> */}
+          <TextInput source="image" />
+          <TextInput source="name" />
+          <ReferenceInput
+          reference="categories"
           label="Category"
-          source="post_category_id"
+          source="categoryId"
           validate={[required()]}
         >
-          <SelectInput optionText="title.vi" />
+          <SelectInput optionText="name" />
         </ReferenceInput>
-        <ReferenceInput
-          reference="admins"
-          source="author_id"
-          validate={[required()]}
-        >
-          <SelectInput optionText="username" />
-        </ReferenceInput>
-        <BooleanInput source="is_published" />
-        <TranslatableInputs locales={["vi", "en"]} defaultLocale="vi">
-          <TextInput source="title" />
-          <TextInput source="slug" />
-          <TextInput source="description" />
-          <RichTextInput source="content" />
-        </TranslatableInputs>
+          <NumberInput source="price" />
+          <NumberInput source="salePrice" />
+          <RichTextInput source="description" />
+          <RichTextInput source="howToCook" />
       </SimpleForm>
     </Create>
   );

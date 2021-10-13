@@ -24,7 +24,7 @@ function ResourceList(props) {
         <TextField source="id" />
         <TextField source="username" />
         <TextField source="email" />
-        <DateField source="created_at" />
+        <DateField source="createdAt" />
         <FunctionField
           label="Action"
           render={(record) => (
@@ -45,8 +45,6 @@ function ResourceEdit(props) {
       <SimpleForm>
         <TextInput disabled source="id" />
         <TextInput source="username" />
-        <TextInput source="fullname" />
-        <TextInput source="phone_number" />
         <TextInput source="email" />
       </SimpleForm>
     </Edit>
@@ -57,10 +55,8 @@ function ResourceCreate(props) {
     <Create {...props}>
       <SimpleForm>
         <TextInput source="username" />
-        <TextInput source="fullname" />
-        <TextInput source="password" type="password" />
-        <TextInput source="phone_number" />
         <TextInput source="email" />
+        <TextInput source="password" type="password" />
       </SimpleForm>
     </Create>
   );
@@ -72,11 +68,9 @@ function ResourceShow(props) {
       <SimpleShowLayout>
         <TextField source="id" />
         <TextField source="username" />
-        <TextField source="fullname" />
-        <TextField source="phone_number" />
         <TextField source="email" />
-        <DateField source="updated_at" />
-        <DateField source="created_at" />
+        <DateField source="updatedAt" />
+        <DateField source="createdAt" />
       </SimpleShowLayout>
     </Show>
   );

@@ -12,13 +12,13 @@ router.get("/", async function (req, res, next) {
     const sort = req?.query?._sort?.toLowerCase() || undefined;
     const ids = req.query?.ids && JSON.parse(req.query.ids);
     const filter = req.query?.filter && JSON.parse(req.query.filter);
-    const data = await prisma.user.findMany({
+    const data = await prisma.category.findMany({
       skip,
       take,
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
     });
-    const total = await prisma.admins.count({
+    const total = await prisma.category.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
     res.send({ data, total });
@@ -29,8 +29,7 @@ router.get("/", async function (req, res, next) {
 router.post("/", async function (req, res, next) {
   try {
     const body = req.body;
-    body.password = bcrypt.hashSync(body.password, 10);
-    const data = await prisma.user.create({ data: body });
+    const data = await prisma.category.create({ data: body });
     res.send(data);
   } catch (e) {
     next(new Error(e));
@@ -39,7 +38,7 @@ router.post("/", async function (req, res, next) {
 
 router.get("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.user.findUnique({
+    const results = await prisma.category.findUnique({
       where: { id: req.params.id },
     });
     res.send(results);
@@ -49,7 +48,7 @@ router.get("/:id", async function (req, res, next) {
 });
 router.delete("/:id", async function (req, res, next) {
   try {
-    const data = await prisma.user.delete({
+    const data = await prisma.category.delete({
       where: { id: req.params.id },
     });
     res.send(data);
@@ -60,7 +59,7 @@ router.delete("/:id", async function (req, res, next) {
 
 router.put("/:id", async function (req, res, next) {
   try {
-    const results = await prisma.user.update({
+    const results = await prisma.category.update({
       where: { id: req.params.id },
       data: req.body,
     });

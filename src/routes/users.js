@@ -18,7 +18,7 @@ router.get("/", async function (req, res, next) {
       where: { id: ids ? { in: ids } : undefined, ...filter },
       orderBy: order ? { [order]: sort } : undefined,
     });
-    const total = await prisma.admins.count({
+    const total = await prisma.user.count({
       where: { id: ids ? { in: ids } : undefined, ...filter },
     });
     res.send({ data, total });
@@ -29,7 +29,6 @@ router.get("/", async function (req, res, next) {
 router.post("/", async function (req, res, next) {
   try {
     const body = req.body;
-    body.password = bcrypt.hashSync(body.password, 10);
     const data = await prisma.user.create({ data: body });
     res.send(data);
   } catch (e) {
@@ -40,7 +39,7 @@ router.post("/", async function (req, res, next) {
 router.get("/:id", async function (req, res, next) {
   try {
     const results = await prisma.user.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id},
     });
     res.send(results);
   } catch (e) {

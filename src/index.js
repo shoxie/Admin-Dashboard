@@ -26,13 +26,10 @@ app.use(morgan("dev"));
 app.use(express.static("./client/build"));
 
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/admins", authMiddleware, require("./routes/admins"));
-app.use("/api/posts", authMiddleware, require("./routes/posts"));
-app.use(
-  "/api/post_categories",
-  authMiddleware,
-  require("./routes/post_categories")
-);
+app.use("/api/users", authMiddleware, require("./routes/users"));
+app.use("/api/products", authMiddleware, require("./routes/products"));
+app.use("/api/categories", authMiddleware, require("./routes/categories"));
+
 
 app.use(function (req, res, next) {
   next(createError(404));

@@ -11,6 +11,7 @@ import {
   ReferenceInput,
   SelectInput,
   BooleanInput,
+  ImageField
 } from "react-admin";
 function ResourceList(props) {
   const ResourceFilters = [
@@ -29,7 +30,7 @@ function ResourceList(props) {
   return (
     <List filters={ResourceFilters} {...props}>
       <Datagrid>
-        <TextField source="id" />
+        {/* <TextField source="id" />
         <TextField source="title.vi" sortable={false} />
 
         <ReferenceField label="Author" reference="admins" source="author_id">
@@ -44,7 +45,12 @@ function ResourceList(props) {
         </ReferenceField>
         <BooleanField source="is_published" />
         <DateField source="updated_at" />
-        <DateField source="created_at" />
+        <DateField source="created_at" /> */}
+        <ImageField source="image" title="name" />
+        <TextField source="name" sortable />
+        <TextField source="price" sortable />
+        <TextField source="salePrice" sortable />
+        <TextField source="snippet" sortable />
         <FunctionField
           label="Action"
           render={(record) => (

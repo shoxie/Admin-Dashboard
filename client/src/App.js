@@ -1,16 +1,18 @@
 import * as React from "react";
 import * as admins from "./resource/admins";
-import * as posts from "./resource/posts/index";
-import * as post_categories from "./resource/post_categories/index";
-import { Admin, Resource } from "react-admin";
+import * as posts from "./resource/products/index";
+import * as categories from "./resource/categories/index";
+import { Admin, Resource, ListGuesser } from "react-admin";
 import { createBrowserHistory as createHistory } from "history";
 import dataProvider from "./dataProvider";
 import authProvider from "./authProvider";
+import Dashboard from "./Dashboard";
 
 const history = createHistory();
 
 const App = () => (
   <Admin
+    dashboard={Dashboard}
     title="KingAttorney"
     history={history}
     authProvider={authProvider}
@@ -18,25 +20,25 @@ const App = () => (
     disableTelemetry
   >
     <Resource
-      name="admins"
+      name="users"
       list={admins.list}
       show={admins.show}
       create={admins.create}
       edit={admins.edit}
     />
     <Resource
-      name="posts"
+      name="products"
       list={posts.list}
       show={posts.show}
       create={posts.create}
       edit={posts.edit}
     />
     <Resource
-      name="post_categories"
-      list={post_categories.list}
-      show={post_categories.show}
-      create={post_categories.create}
-      edit={post_categories.edit}
+      name="categories"
+      list={categories.list}
+      show={categories.show}
+      create={categories.create}
+      edit={categories.edit}
     />
   </Admin>
 );

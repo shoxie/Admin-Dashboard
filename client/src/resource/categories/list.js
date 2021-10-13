@@ -28,17 +28,10 @@ function ResourceList(props) {
     <List filters={ResourceFilters} {...props}>
       <Datagrid>
         <TextField source="id" />
-        <TextField sortable={false} source={`title.vi`} />
-        <ReferenceField
-          label="Parent Category"
-          reference="post_categories"
-          source="parent_id"
-        >
-          <TextField source={`title.vi`} />
-        </ReferenceField>
-        <BooleanField source="is_published" />
-        <DateField source="updated_at" />
-        <DateField source="created_at" />
+        <TextField source="name" />
+        <TextField source="description" />
+        <DateField source="updatedAt" />
+        <DateField source="createdAt" />
         <FunctionField
           label="Action"
           render={(record) => (

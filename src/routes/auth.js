@@ -6,18 +6,31 @@ const router = express.Router();
 
 router.post("/", async function (req, res, next) {
   try {
-    const { username, password } = req.body;
-    const user = await prisma.admins.findUnique({
-      where: { username: username },
+    const { email, username, password } = req.body;
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          {
+            email: {
+              equals: email,
+            },
+          },
+          {
+            username: {
+              equals: username,
+            },
+          },
+        ],
+        password: {
+          equals: password,
+        },
+      },
     });
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-      const e = new Error("wrong username or password");
-      e.status = 403;
-      return next(e);
-    }
-    delete user.password;
-    req.session.user = user;
-    res.send(user);
+    if (user !== null) {
+      delete user.password
+      req.session.user = user;
+      res.send(user);
+    } else res.status(403).send("Invalid credentials");
   } catch (e) {
     next(new Error(e));
   }
